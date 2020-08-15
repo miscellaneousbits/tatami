@@ -69,7 +69,9 @@ int Tatami(int s)
 
 int main(int ac, char* av[])
 {
-    int s = atoi(av[1]);
+    int s = 200;
+    if (ac > 1)
+        s = atoi(av[1]);
     if (ac > 2)
         nMax = strtoul(av[2], NULL, 10);
     std::cout << "T(" << Tatami(s) << ") = " << s << std::endl;
