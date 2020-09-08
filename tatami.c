@@ -37,7 +37,7 @@ unsigned Tatami(unsigned s)
     for (unsigned i = 0; i < nMax / 2; ++i)
         if (v[i] == s)
             return i + i;
-    return 0; // shouldn't happen
+    abort();  // shouldn't happen
 }
 
 int main(int ac, char* av[])
