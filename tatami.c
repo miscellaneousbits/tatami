@@ -1,45 +1,40 @@
-#if defined(__TCC)
-#include <tcclib.h>
-#else
 #include <math.h>
 #include <stdio.h>
-#endif
+#include <stdlib.h>
 
-#define nMax 100000000  // default
-//#define nMax 85765682        // for T(s) = 200
-//#define nMax 1640000000      // for T(s) = 400
-
-//#define nMaxSqrt sqrt(nMax)
+#define nMax 100000000
 #define nMaxSqrt 10000
 
-unsigned v[nMax];
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+
+unsigned v[nMax / 2];
 
 static void count()
 {
-    for (int i = 7; i < nMaxSqrt; i++)
+    for (unsigned i = 7; i < nMaxSqrt; i++)
     {
-	int inc = (i & 1) + 1;
-        int k2 = i + 3;
-        int k3 = i + i - 4;
-        while ((k2 <= k3) && ((i * k2) < nMax))
+        const unsigned inc = (i & 1) + 1;
+        unsigned k2 = i + 3;
+        unsigned k3 = i + i - 4;
+        unsigned k5 = i * k2;
+
+        while ((k2 <= k3) && (k5 < nMax))
         {
-            int k4 = (nMax - 1) / i;
-            if (k3 < k4)
-                k4 = k3;
-            for (int j = k2; j <= k4; j += inc)
-                ++v[(i * j) / 2];
-            k2 += i + 1;
+            unsigned k4 = MIN((nMax - 1) / i, k3);
+            for (unsigned j = k2; j <= k4; j += inc)
+                v[(i * j) / 2]++;
             k3 += i - 1;
+            k5 += (k2 += i + 1);
         }
     }
 }
 
-int Tatami(int s)
+unsigned Tatami(unsigned s)
 {
     for (unsigned i = 0; i < (nMax / 2); i++)
         v[i] = 0;
     count();
-    for (int i = 0; i < nMax / 2; ++i)
+    for (unsigned i = 0; i < nMax / 2; ++i)
         if (v[i] == s)
             return i + i;
     return 0; // shouldn't happen
@@ -48,6 +43,8 @@ int Tatami(int s)
 int main(int ac, char* av[])
 {
     int s = 200;
+    if (ac > 1)
+        s = atoi(av[1]);
     printf("T(%u)=%u\n", Tatami(s), s);
 }
 
