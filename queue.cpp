@@ -2,10 +2,6 @@
 // Written December 7, 2019 by Eric Olson
 // Translated to C++, 2019 by Jean M. Cyr
 
-#if !defined(TDEBUG)
-#define TDEBUG 0
-#endif
-
 #include <atomic>
 #include <cmath>
 #include <condition_variable>
@@ -15,9 +11,6 @@
 #include <queue>
 #include <thread>
 #include <vector>
-#if TDEBUG
-#include <sstream>
-#endif
 
 using namespace std;
 
@@ -95,10 +88,6 @@ void Threads::enqueue(Factors& restrict f)
 {
     {
         unique_lock<mutex> lock(mtx);
-#if TDEBUG
-        if (stop)
-            throw runtime_error("enqueue on stopped Threads");
-#endif
         tasks.emplace(f);
     }
     condition.notify_one();
@@ -150,25 +139,6 @@ static void Primes()
         if (IsPrime(p))
             P[num_primes++] = p;
     }
-#if TDEBUG
-    uint32_t i;
-    uint_prime_t r;
-    stringstream ss;
-    if (p <= sMax / p + 1)
-    {
-        ss << "The maximum prime " << p << " is too small!";
-        throw runtime_error(ss.str());
-    }
-    r = 1;
-    for (i = 0; i < fNum - 1; i++)
-    {
-        if (P[i] > sMax / r + 1)
-            return;
-        r *= P[i];
-    }
-    ss << "Distinct Primes " << fNum << " in factorisation too few!";
-    throw runtime_error(ss.str());
-#endif
 }
 
 static inline uint_prime_t ppow(uint_prime_t p, uint32_t n)
@@ -302,16 +272,10 @@ static void TQueue(Factors& restrict f)
     }
 }
 
-#if !defined(__ARM_ARCH_ISA_A64)
-#define ARCH "32"
-#else
-#define ARCH "64"
-#endif
-
 int main()
 {
-    cout << "Compiled for: " << ARCH << " bit arch, using "
-         << ((Ts == 200) ? "32" : "64") << " bit arithmetic" << endl;
+    cout << "Compiled using " << ((Ts == 200) ? "32" : "64")
+         << " bit arithmetic" << endl;
     auto start = std::chrono::high_resolution_clock::now();
     Primes();
     auto end = std::chrono::high_resolution_clock::now();

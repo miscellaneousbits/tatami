@@ -9,13 +9,6 @@
 #include <sysexits.h>
 #include <unistd.h>
 
-#define TDEBUG 0
-
-#if !defined(T_S)
-#define T_S 200
-#endif
-
-#if T_S == 200
 typedef uint32_t prime_t;
 
 #define MAX_SQUARES 100000000
@@ -24,26 +17,7 @@ typedef uint32_t prime_t;
 #define MAX_FREE_FACTORS 4000
 #define FIDO 15
 
-#define P_FMT "u"
-
-#elif T_S == 1000
-typedef uint64_t prime_t;
-
-#define MAX_SQUARES 100000000000
-#define NUM_PRIMES 40000
-#define NUM_FACTORS 20
-#define MAX_FREE_FACTORS 40000
-#define FIDO 15
-
-#if _LP64
-#define P_FMT "lu"
-#else
-#define P_FMT "llu"
-#endif
-
-#else
-#error "T_S unsupported"
-#endif
+static const unsigned T_S = 200;
 
 static uint32_t num_procs;
 
@@ -87,13 +61,6 @@ static inline int q_empty(queue_t* q)
 
 static inline factors_t* q_remove_first(queue_t* q)
 {
-#if TDEBUG
-    if (q_empty(q))
-    {
-        printf("queue empty\n");
-        exit(EX_SOFTWARE);
-    }
-#endif
     factors_t* f = q->next;
     f->next->prev = (void*)q;
     q->next = f->next;
@@ -140,7 +107,6 @@ static void* worker(void* arg)
 
 static void work_start(void)
 {
-    num_procs = sysconf(_SC_NPROCESSORS_ONLN);
     workers = (pthread_t*)malloc(sizeof(pthread_t) * num_procs);
     stop = 0;
     free_q_init();
@@ -196,25 +162,6 @@ static void calc_primes()
     for (p = 5; num_primes < NUM_PRIMES; p += 2)
         if (is_prime(p))
             P[num_primes++] = p;
-#if TDEBUG
-    prime_t i;
-    prime_t r;
-    if (p <= MAX_SQUARES / p + 1)
-    {
-        printf("The maximum prime %" P_FMT " is too small\n", p);
-        exit(EX_SOFTWARE);
-    }
-    r = 1;
-    for (i = 0; i < NUM_FACTORS - 1; i++)
-    {
-        if (P[i] > MAX_SQUARES / r + 1)
-            return;
-        r *= P[i];
-    }
-    printf("Distinct Primes %" P_FMT " in factorisation too few!",
-        (prime_t)NUM_FACTORS);
-    exit(EX_SOFTWARE);
-#endif
 }
 
 static prime_t p_pow(prime_t p, uint8_t n)
@@ -356,6 +303,7 @@ static void t_work(factors_t f)
 
 int main()
 {
+    num_procs = sysconf(_SC_NPROCESSORS_ONLN);
     struct timeval start, end;
     gettimeofday(&start, NULL);
     calc_primes();
@@ -377,7 +325,8 @@ int main()
     gettimeofday(&end, NULL);
     elapsedTime = (end.tv_sec - start.tv_sec);
     elapsedTime += (end.tv_usec - start.tv_usec) / 1000000.0;
+    printf("Threads: %u\n", num_procs);
     printf("Tatami time: %f seconds\n", elapsedTime);
-    printf("T(%" P_FMT ")=%u\n", gMin, T_S);
+    printf("T(%u)=%u\n", gMin, T_S);
     return EX_OK;
 }
